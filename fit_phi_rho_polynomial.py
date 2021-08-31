@@ -7,6 +7,7 @@ import pandas
 import wrap_around_polynomial
 import math
 import ransac.core as ransac
+import conic_section
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s [%(levelname)s] %(message)s')
 
@@ -48,7 +49,7 @@ def main(
             poly_file.write("{},{}\n".format(alpha, r))
     """
 
-    wrap_poly_modeller = ransac.Modeler(model_class=wrap_around_polynomial.WrapAroundPolynomial,
+    """wrap_poly_modeller = ransac.Modeler(model_class=wrap_around_polynomial.WrapAroundPolynomial,
                                         number_of_trials=1000, acceptable_error=5)
     consensus_poly, inliers, outliers = wrap_poly_modeller.ConsensusModel(xy_tuples, degree=16)
     with open(os.path.join(outputDirectory, "ransac_alpha_rho.csv"), 'w+') as fit_file:
@@ -57,7 +58,7 @@ def main(
             evaluation = consensus_poly.Evaluate(alpha)
             print ("{}, {}, {}\n".format(alpha, rho, evaluation))
             fit_file.write("{},{},{}\n".format(alpha, rho, evaluation))
-
+    """
 
 
 
