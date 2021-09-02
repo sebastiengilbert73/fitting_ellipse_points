@@ -6,7 +6,7 @@ import random
 import pandas
 import math
 import ransac.core as ransac
-from conic_section import ConicSection
+from ransac.models.conic_section import ConicSection
 import cv2
 import numpy as np
 
@@ -28,7 +28,7 @@ def main(
         x = row.x
         y = row.y
         xy_tuples.append( ((x, y), 0) )
-    conic_section = ConicSection()
+    """conic_section = ConicSection()
     conic_section.Create(xy_tuples)
     conic_section_type = conic_section.ConicSectionType()
     logging.info("conic_section_type = {}".format(conic_section_type))
@@ -43,9 +43,35 @@ def main(
             if abs(conic_section.Evaluate((x, y))) < threshold:
                 image[y, x, 1] = 255
 
+    center = conic_section.Center()
+    logging.debug("center = {}".format(center))
+
+    center, a, b, theta = conic_section.EllipseParameters()
+    logging.debug("center = {}; a = {}; b = {}; theta = {}".format(center, a, b, theta))
+    """
+
+    modeller = ransac.Modeler(ConicSection, number_of_trials=100, acceptable_error=5)
+    conic_section, inliers, outliers = modeller.ConsensusModel(xy_tuples)
+    center, a, b, theta = conic_section.EllipseParameters()
+    logging.debug("center = {}; a = {}; b = {}; theta = {}".format(center, a, b, theta))
+
+    # Create an annotated image
+    image = np.zeros((imageSizeHW[0], imageSizeHW[1], 3), dtype=np.uint8)
+    for ((x, y), d) in xy_tuples:
+        image[y, x, 0] = 255
+    threshold = 0.0001
+    for y in range(imageSizeHW[0]):
+        for x in range(imageSizeHW[1]):
+            if abs(conic_section.Evaluate((x, y))) < threshold:
+                image[y, x, 1] = 255
+
+    # Test closest point
+    p = (218, 320)
+    closest_point = conic_section.ClosestPoint(p)
 
     image_filepath = os.path.join(outputDirectory, "fitConicSection_main_annotated.png")
     cv2.imwrite(image_filepath, image)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
