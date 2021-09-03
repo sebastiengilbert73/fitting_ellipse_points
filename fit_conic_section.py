@@ -28,6 +28,7 @@ def main(
         x = row.x
         y = row.y
         xy_tuples.append( ((x, y), 0) )
+    logging.debug("len(xy_tuples) = {}".format(len(xy_tuples)))
     """conic_section = ConicSection()
     conic_section.Create(xy_tuples)
     conic_section_type = conic_section.ConicSectionType()
@@ -50,10 +51,11 @@ def main(
     logging.debug("center = {}; a = {}; b = {}; theta = {}".format(center, a, b, theta))
     """
 
-    modeller = ransac.Modeler(ConicSection, number_of_trials=100, acceptable_error=5)
+    modeller = ransac.Modeler(ConicSection, number_of_trials=1000, acceptable_error=0.001)
     conic_section, inliers, outliers = modeller.ConsensusModel(xy_tuples)
-    center, a, b, theta = conic_section.EllipseParameters()
-    logging.debug("center = {}; a = {}; b = {}; theta = {}".format(center, a, b, theta))
+    logging.debug("len(inliers) = {}; len(outliers) = {}".format(len(inliers), len(outliers)))
+    #center, a, b, theta = conic_section.EllipseParameters()
+    #logging.debug("center = {}; a = {}; b = {}; theta = {}".format(center, a, b, theta))
 
     # Create an annotated image
     image = np.zeros((imageSizeHW[0], imageSizeHW[1], 3), dtype=np.uint8)
@@ -64,10 +66,14 @@ def main(
         for x in range(imageSizeHW[1]):
             if abs(conic_section.Evaluate((x, y))) < threshold:
                 image[y, x, 1] = 255
+    for outlier in outliers:
+        image[outlier[0][1], outlier[0][0], :] = (0, 0, 255)
+        #logging.debug("outlier = {}".format(outlier))
 
     # Test closest point
-    p = (218, 320)
-    closest_point = conic_section.ClosestPoint(p)
+    p = (959, 761)
+    closest_radial_point = conic_section.ClosestRadialPoint(p)
+    logging.info("closest_radial_point = {}".format(closest_radial_point))
 
     image_filepath = os.path.join(outputDirectory, "fitConicSection_main_annotated.png")
     cv2.imwrite(image_filepath, image)
