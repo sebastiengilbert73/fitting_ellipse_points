@@ -51,7 +51,7 @@ def main(
     logging.debug("center = {}; a = {}; b = {}; theta = {}".format(center, a, b, theta))
     """
 
-    modeller = ransac.Modeler(ConicSection, number_of_trials=1000, acceptable_error=0.001)
+    modeller = ransac.Modeler(ConicSection, number_of_trials=300, acceptable_error=5)
     conic_section, inliers, outliers = modeller.ConsensusModel(xy_tuples)
     logging.debug("len(inliers) = {}; len(outliers) = {}".format(len(inliers), len(outliers)))
     #center, a, b, theta = conic_section.EllipseParameters()
@@ -62,18 +62,22 @@ def main(
     for ((x, y), d) in xy_tuples:
         image[y, x, 0] = 255
     threshold = 0.0001
-    for y in range(imageSizeHW[0]):
+    """for y in range(imageSizeHW[0]):
         for x in range(imageSizeHW[1]):
             if abs(conic_section.Evaluate((x, y))) < threshold:
                 image[y, x, 1] = 255
+    """
     for outlier in outliers:
         image[outlier[0][1], outlier[0][0], :] = (0, 0, 255)
         #logging.debug("outlier = {}".format(outlier))
 
-    # Test closest point
-    p = (959, 761)
-    closest_radial_point = conic_section.ClosestRadialPoint(p)
-    logging.info("closest_radial_point = {}".format(closest_radial_point))
+    ellipse_points = conic_section.EllipsePoints(rounding=True)
+    logging.debug("len(ellipse_points) = {}".format(len(ellipse_points)))
+    for ellipse_pt_ndx in range(0, len(ellipse_points) - 1):
+        p1 = ellipse_points[ellipse_pt_ndx]
+        p2 = ellipse_points[ellipse_pt_ndx + 1]
+        cv2.line(image, p1, p2, (0, 255, 255))
+    cv2.line(image, ellipse_points[0], ellipse_points[-1], (0, 255, 255))
 
     image_filepath = os.path.join(outputDirectory, "fitConicSection_main_annotated.png")
     cv2.imwrite(image_filepath, image)
